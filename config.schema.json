@@ -1,0 +1,161 @@
+{
+    "pluginAlias": "CoolAutomation",
+    "pluginType": "platform",
+    "singular": true,
+    "customUi": true,
+    "headerDisplay": "Homebridge plugin for Cool Automation - HVAC Systems Controller",
+    "footerDisplay": "Created by @nitaybz",
+    "schema": {
+        "type": "object",
+        "properties": {
+            "ip": {
+              "title": "IP Address",
+              "type": "string",
+              "required": true
+            },
+			"statePollingInterval": {
+				"title": "AC Device Status Polling Interval in Seconds",
+				"description": "Time in seconds between each status polling of the devices",
+				"default": 30,
+				"type": "integer",
+				"minimum": 5,
+				"maximum": 300
+			},
+            "minTemperature": {
+                "title": "Minimum Temperature",
+				"default": 16,
+				"type": "integer",
+				"minimum": 10,
+				"maximum": 95
+            },
+            "maxTemperature": {
+                "title": "Maximum Temperature",
+				"default": 30,
+				"type": "integer",
+				"minimum": 10,
+				"maximum": 95
+            },
+            "coolMode": {
+                "title": "COOL",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "heatMode": {
+                "title": "HEAT",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "autoMode": {
+                "title": "AUTO",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "fanMode": {
+                "title": "FAN",
+                "description": "Creates extra fan accessory",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "dryMode": {
+                "title": "DRY",
+                "description": "Creates extra dehumidifier accessory",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "vlowFspeed": {
+                "title": "Very Low / Quiet",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "lowFspeed": {
+                "title": "Low",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "medFspeed": {
+                "title": "Medium",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "highFspeed": {
+                "title": "High",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "topFspeed": {
+                "title": "Very High / Top",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "autoFspeed": {
+                "title": "Auto",
+                "type": "boolean",
+                "default": true,
+                "required": true
+            },
+            "debug": {
+                "title": "Enable Debug Logs",
+                "description": "When checked, the plugin will produce extra logs for debugging purposes",
+                "type": "boolean",
+                "default": false,
+                "required": false
+            }
+        }
+    },
+	"layout": [
+		{
+			"key": "ip"
+		},
+		{
+			"key": "debug"
+		},
+		{
+			"type": "fieldset",
+			"expandable": true,
+			"title": "Advanced Settings",
+			"description": "Don't change these, unless you understand what you're doing.",
+			"items": [
+				"statePollingInterval",
+				"minTemperature",
+				"maxTemperature",
+        		{
+        			"type": "fieldset",
+        			"expandable": true,
+        			"title": "Modes",
+        			"description": "enable/disable modes",
+        			"items": [
+        				"coolMode",
+        				"heatMode",
+        				"autoMode",
+        				"fanMode",
+        				"dryMode"
+        			]
+        		},
+        		{
+        			"type": "fieldset",
+        			"expandable": true,
+        			"title": "Fan Speeds",
+        			"description": "enable/disable fan speeds",
+        			"items": [
+        				"vlowFspeed",
+        				"lowFspeed",
+        				"medFspeed",
+        				"highFspeed",
+        				"topFspeed",
+        				"autoFspeed"
+        			]
+        		}
+			]
+		}
+	]
+  }

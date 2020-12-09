@@ -1,0 +1,49 @@
+{
+  "name": "homebridge-cool-automation",
+  "description": "Homebridge plugin for Cool Automation - HVAC Systems Controller",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/nitaybz/homebridge-cool-automation.git"
+  },
+  "license": "GNU",
+  "preferGlobal": true,
+  "keywords": [
+    "homebridge-plugin",
+    "homebridge-cool-automation",
+    "cool-automation",
+    "smart-ac"
+  ],
+  "bugs": {
+    "url": "https://github.com/nitaybz/homebridge-cool-automation/issues"
+  },
+  "engines": {
+    "node": ">=10.17.0",
+    "homebridge": ">=1.1.6"
+  },
+  "dependencies": {
+    "node-persist": "^3.0.5",
+    "tcp-client": "^1.1.9"
+  },
+  "devDependencies": {
+    "eslint": "^7.1.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
+  },
+  "funding": [
+    {
+      "type": "paypal",
+      "url": "https://paypal.me/nitaybz"
+    },
+    {
+      "type": "patreon",
+      "url": "https://www.patreon.com/nitaybz"
+    },
+    {
+      "type": "kofi",
+      "url": "https://ko-fi.com/nitaybz"
+    }
+  ]
+}
