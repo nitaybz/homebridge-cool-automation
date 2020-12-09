@@ -2,7 +2,6 @@
     "pluginAlias": "CoolAutomation",
     "pluginType": "platform",
     "singular": true,
-    "customUi": true,
     "headerDisplay": "Homebridge plugin for Cool Automation - HVAC Systems Controller",
     "footerDisplay": "Created by @nitaybz",
     "schema": {

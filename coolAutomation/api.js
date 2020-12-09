@@ -49,6 +49,8 @@ const sendCommand = function (cmd) {
 			}
 		
 			response = response.replace(/OK$/g, '').trim().split('\n')
+			log.easyDebug(`Successful response (${cmd}):`)
+			log.easyDebug(response)
 			resolve(response)
 		})	
 	})

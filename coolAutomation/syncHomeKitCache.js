@@ -29,7 +29,7 @@ module.exports = (platform) => {
 			let deviceExists
 			switch(accessory.context.type) {
 				case 'AirConditioner':
-					deviceExists = platform.devices.find(device => device.id === accessory.context.deviceId)
+					deviceExists = platform.devices.find(device => device.uid === accessory.context.deviceId)
 					if (!deviceExists)
 						accessoriesToRemove.push(accessory)
 					break

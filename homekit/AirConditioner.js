@@ -1,4 +1,4 @@
-const unified = require('../cool-automation/unified')
+const unified = require('../CoolAutomation/unified')
 let Characteristic, Service, FAHRENHEIT_UNIT, CELSIUS_UNIT
 
 class AirConditioner {
@@ -33,12 +33,12 @@ class AirConditioner {
 		this.filterService = deviceInfo.filterService
 		this.capabilities = unified.capabilities(platform, device)
 
-		this.state = this.cachedState.devices[this.id] = unified.acState(device)
+		this.state = this.cachedState.devices[this.id] = unified.acState(this, device)
 
 		if (!this.state.mode)
 			this.state.mode = 'COOL'
 		
-		const StateHandler = require('../cool-automation/StateHandler')(this, platform)
+		const StateHandler = require('../coolAutomation/StateHandler')(this, platform)
 		this.state = new Proxy(this.state, StateHandler)
 
 		this.stateManager = require('./StateManager')(this, platform)

@@ -33,7 +33,7 @@ module.exports = (platform) => {
 
 					if (airConditioner) {
 						// Update AC state in cache + HomeKit
-						airConditioner.state.update(unified.acState(device))
+						airConditioner.state.update(unified.acState(airConditioner, device))
 					}
 				})
 

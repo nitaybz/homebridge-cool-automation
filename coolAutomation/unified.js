@@ -82,29 +82,28 @@ module.exports = {
 		if (platform.coolMode !== false)
 			capabilities.COOL = settings
 
-		if (platform.heatMode === false)
+		if (platform.heatMode !== false)
 			capabilities.HEAT = settings
 
-		if (platform.autoMode === false)
+		if (platform.autoMode !== false)
 			capabilities.AUTO = settings
 
-		if (platform.fanMode === false)
+		if (platform.fanMode !== false)
 			capabilities.FAN = settings
 
-		if (platform.dryMode === false)
+		if (platform.dryMode !== false)
 			capabilities.DRY = settings
-			
 
 		return capabilities
 	},
 
-	acState: device => {
+	acState: (device, state) => {
 		return {
-			active: device.onoff === 'ON',
-			mode: device.mode,
-			targetTemperature: device.tunit === 'C' ? device.st : toCelsius(device.st),
-			currentTemperature: device.tunit === 'C' ? device.rt : toCelsius(device.rt),
-			fanSpeed: device.fspeed ? fanSpeedToHK(device.fspeed, device.mode.fanSpeeds) : 0
+			active: state.onoff === 'ON',
+			mode: state.mode,
+			targetTemperature: state.tunit === 'C' ? state.st : toCelsius(state.st),
+			currentTemperature: state.tunit === 'C' ? state.rt : toCelsius(state.rt),
+			fanSpeed: state.fspeed ? fanSpeedToHK(state.fspeed, device.capabilities[state.mode].fanSpeeds) : 0
 		}
 	},
 
