@@ -108,7 +108,7 @@ module.exports = (device, platform) => {
 
 			CurrentRelativeHumidity: (callback) => {
 				log.easyDebug(device.name, '(GET) - Current Relative Humidity is:', device.state.relativeHumidity, '%')
-				callback(null, device.state.relativeHumidity)
+				callback(null, 0)
 			},
 
 			ACSwing: (callback) => {

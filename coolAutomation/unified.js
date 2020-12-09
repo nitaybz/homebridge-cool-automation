@@ -70,8 +70,8 @@ module.exports = {
 		const settings = {
 			temperatures: {
 				C: {
-					min: device.tunit === 'F' && platform.minTemp !== 30 ? toCelsius(platform.minTemp) : this.minTemp,
-					max: device.tunit === 'F' && platform.maxTemp !== 30 ? toCelsius(platform.maxTemp) : this.maxTemp
+					min: device.tunit === 'F' && platform.minTemp !== 30 ? toCelsius(platform.minTemp) : platform.minTemp,
+					max: device.tunit === 'F' && platform.maxTemp !== 30 ? toCelsius(platform.maxTemp) : platform.maxTemp
 				}
 			},
 			fanSpeeds: speeds,
