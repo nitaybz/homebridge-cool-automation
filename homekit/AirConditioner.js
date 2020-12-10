@@ -1,4 +1,4 @@
-const unified = require('../CoolAutomation/unified')
+const unified = require('../coolAutomation/unified')
 let Characteristic, Service, FAHRENHEIT_UNIT, CELSIUS_UNIT
 
 class AirConditioner {
