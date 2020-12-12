@@ -79,6 +79,8 @@ module.exports = {
 			swing: false
 		}
 
+		capabilities.ALL = settings
+
 		if (platform.coolMode !== false)
 			capabilities.COOL = settings
 
@@ -103,7 +105,7 @@ module.exports = {
 			mode: state.mode,
 			targetTemperature: state.tunit === 'C' ? state.st : toCelsius(state.st),
 			currentTemperature: state.tunit === 'C' ? state.rt : toCelsius(state.rt),
-			fanSpeed: state.fspeed ? fanSpeedToHK(state.fspeed, device.capabilities[state.mode].fanSpeeds) : 0
+			fanSpeed: state.fspeed ? fanSpeedToHK(state.fspeed, device.capabilities.ALL.fanSpeeds) : 0
 		}
 	},
 
@@ -112,7 +114,7 @@ module.exports = {
 			onoff: state.active ? 'ON' : 'OFF',
 			mode: state.mode,
 			st: state.targetTemperature,
-			fspeed: state.fanSpeed ? HKToFanSpeed(state.fanSpeed, device.capabilities[state.mode].fanSpeeds): 'AUTO'
+			fspeed: state.fanSpeed ? HKToFanSpeed(state.fanSpeed, device.capabilities.ALL.fanSpeeds): 'AUTO'
 		}
 	}
 }
