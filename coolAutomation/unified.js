@@ -27,9 +27,9 @@ function HKToFanSpeed(value, fanSpeeds) {
 	return selected
 }
 
-// function toFahrenheit(value) {
-// 	return Math.round((value * 1.8) + 32)
-// }
+function toFahrenheit(value) {
+	return Math.round((value * 1.8) + 32)
+}
 
 
 function toCelsius(value) {
@@ -113,7 +113,7 @@ module.exports = {
 		return {
 			onoff: state.active ? 'ON' : 'OFF',
 			mode: state.mode,
-			st: state.targetTemperature,
+			st: device.usesFahrenheit ? toFahrenheit(state.targetTemperature) : state.targetTemperature,
 			fspeed: state.fanSpeed ? HKToFanSpeed(state.fanSpeed, device.capabilities.ALL.fanSpeeds): 'AUTO'
 		}
 	}
