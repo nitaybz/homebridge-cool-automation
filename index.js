@@ -15,6 +15,7 @@ class CoolAutomationPlatform {
 
 		this.cachedAccessories = []
 		this.activeAccessories = []
+		this.customDeviceNames = config['customDeviceNames'] || {}
 		this.log = log
 		this.api = api
 		this.storage = storage

@@ -70,9 +70,14 @@ Otherwise, follow these instructions
         "highFspeed": true,
         "topFspeed": false,
         "autoFspeed": true,
+        "customDeviceNames": {
+          "deviceID1": "Custom Name 1",
+          "deviceID2": "Custom Name 2"
+        },
         "debug": false
     }
 ]
+
 ```
 
 
@@ -96,6 +101,7 @@ Otherwise, follow these instructions
 | `highFspeed`                   |  Support "High" fan speed                                 |          |   true   |  Boolean |
 | `topFspeed`                    |  Support "Very-High/Top" fan speed                        |          |   true   |  Boolean |
 | `autoFspeed`                   |  Support "Auto" fan speed                                 |          |   true   |  Boolean |
+| `customDeviceNames`            |  instead of L5.008 AC, add in a friendly e.g Kitchen AC   |          |   -      |  Sring   |
 | `debug` |  When set to `true`, the plugin will produce extra logs for debugging purposes   |          |  `false` |  Boolean |
 
 ### Fan speeds & "AUTO" speed

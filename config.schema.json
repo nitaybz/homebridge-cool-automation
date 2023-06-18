@@ -102,6 +102,17 @@
                 "default": true,
                 "required": true
             },
+            "customDeviceNames": {
+                "title": "Custom Device Names",
+                "description": "Map of device IDs to custom names",
+                "type": "object",
+                "patternProperties": {
+                  ".*": {
+                    "type": "string"
+                  }
+                },
+                "additionalProperties": false
+              },
             "debug": {
                 "title": "Enable Debug Logs",
                 "description": "When checked, the plugin will produce extra logs for debugging purposes",
@@ -116,6 +127,9 @@
 			"key": "ip"
 		},
 		{
+            "key": "customDeviceNames"
+          },
+        {
 			"key": "debug"
 		},
 		{

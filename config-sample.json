@@ -25,6 +25,10 @@
       "highFspeed": true,
       "topFspeed": false,
       "autoFspeed": true,
+      "customDeviceNames": {
+        "deviceID1": "Custom Name 1",
+        "deviceID2": "Custom Name 2"
+      },
       "debug": false
     }
   ],
