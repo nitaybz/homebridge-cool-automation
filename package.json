@@ -1,7 +1,7 @@
 {
   "name": "homebridge-cool-automation",
   "description": "Homebridge plugin for Cool Automation - HVAC Systems Controller",
-  "version": "0.0.7",
+  "version": "1.0.0",
   "repository": {
     "type": "git",
     "url": "git://github.com/nitaybz/homebridge-cool-automation.git"
@@ -12,6 +12,8 @@
     "homebridge-plugin",
     "homebridge-cool-automation",
     "cool-automation",
+    "cool-master",
+    "coolmaster",
     "smart-ac"
   ],
   "bugs": {
@@ -22,8 +24,7 @@
     "homebridge": ">=1.1.6"
   },
   "dependencies": {
-    "node-persist": "^3.0.5",
-    "tcp-client": "^1.1.9"
+    "node-persist": "^3.1.3"
   },
   "devDependencies": {
     "eslint": "^7.1.0"

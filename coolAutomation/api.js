@@ -1,68 +1,80 @@
-const tcpClient = require('tcp-client')
+const net = require('net');
 
-let log, client
+let log, client, port, ip;
 
 module.exports = async function (platform) {
-	log = platform.log
- 
-	client = tcpClient.createClient({
-		ip: platform.ip,
-		port: platform.port || 10102,
-		timeout: platform.timeout || 2000
-	})
-	
+	log = platform.log;
+	port = platform.port || 10102
+	ip = platform.ip
+
+	client = new net.Socket();
+
 	return {
-	
 		getDevices: () => {
 			return sendCommand('ls2')
 				.then(response => parseState(response))
-				.catch(err => {throw err})
+				.catch(err => {
+					throw err;
+				});
 		},
-	
+
 		setState: (uid, state) => {
 			return sendCommand(`${state.onoff.toLowerCase()} ${uid}`)
 				.then(() => sendCommand(`${state.mode.toLowerCase()} ${uid}`))
 				.then(() => sendCommand(`temp ${uid} ${state.st}`))
-				.then(() => sendCommand(`fspeed ${uid} ${state.fspeed[0].toLowerCase()}`))
-		}
-	}
+				.then(() => sendCommand(`fspeed ${uid} ${state.fspeed[0].toLowerCase()}`));
+		},
 
-}
-
+		closeConnection: () => {
+			client.end(); // Close the connection when it's no longer needed
+		},
+	};
+};
 
 const sendCommand = function (cmd) {
 	return new Promise((resolve, reject) => {
-	
-		log.easyDebug(`Sending Command: ${cmd}`)
-		client.request(`${cmd}\n`,function (err, response) {
-			if (err) {
-				log.error(`Error Sending Command: ${cmd}`)
-				err = translate(err)
-				reject(err)
-				return
-			}
-			response = response.replace(/[>\r]/g, '').trim();
-			if (response.slice(-2) !== 'OK') {
-				log.error(`Error Sending Command: ${cmd}`)
-				reject(response)
-				return
-			}
-		
-			response = response.replace(/OK$/g, '').trim().split('\n')
-			log.easyDebug(`Successful response (${cmd}):`)
-			log.easyDebug(response)
-			resolve(response)
-		})	
-	})
-}
+		log.easyDebug(`Sending Command: ${cmd}`);
 
-const parseState = (data) => {
+		if (!client.connecting && !client.writable) {
+			client.connect(port, ip);
+		}
+
+		const onData = data => {
+			let response = data.toString();
+			response = response.replace(/[>\r]/g, '').trim();
+
+			if (response.slice(-2) !== 'OK') {
+				log.error(`Error Sending Command: ${cmd}`);
+				reject(response);
+				return;
+			}
+
+			response = response.replace(/OK$/g, '').trim().split('\n');
+			log.easyDebug(`Successful response (${cmd}):`);
+			log.easyDebug(response);
+			resolve(response);
+		};
+
+		const onError = err => {
+			log.error(`Error Sending Command: ${cmd}`);
+			reject(err.message || err);
+		};
+
+		client.on('data', onData);
+		client.on('error', onError);
+
+		client.write(`${cmd}\n`, () => {
+			client.removeListener('data', onData);
+			client.removeListener('error', onError);
+		});
+	});
+};
+
+const parseState = data => {
 	return data.map(d => {
-		
 		// verify temp unit
-		let celsius = true
-		if (d.substring(11, 17).includes('F'))
-			celsius = false
+		let celsius = true;
+		if (d.substring(11, 17).includes('F')) celsius = false;
 
 		return {
 			uid: d.substring(0, 6).trim(),
@@ -75,10 +87,6 @@ const parseState = (data) => {
 			filt: celsius ? d[38] : d[38],
 			dmnd: celsius ? d[40] : d[40],
 			tunit: celsius ? 'C' : 'F'
-		}
-	})
-}
-
-const translate = (text) => {
-	return text.replace('El Servirdor No responde!', 'The Server is NOT Responding!')
-}
+		};
+	});
+};
