@@ -1,11 +1,12 @@
 const net = require('net');
 
-let log, client, port, ip;
+let log, client, port, ip, connected;
 
 module.exports = async function (platform) {
 	log = platform.log;
 	port = platform.port || 10102
 	ip = platform.ip
+
 
 	client = new net.Socket();
 
@@ -27,6 +28,7 @@ module.exports = async function (platform) {
 
 		closeConnection: () => {
 			client.end(); // Close the connection when it's no longer needed
+			connected = false
 		},
 	};
 };
@@ -35,38 +37,55 @@ const sendCommand = function (cmd) {
 	return new Promise((resolve, reject) => {
 		log.easyDebug(`Sending Command: ${cmd}`);
 
-		if (!client.connecting && !client.writable) {
-			client.connect(port, ip);
-		}
+
+		let commandTimeout = null
+
+		let dataBuffer = Buffer.from('', 'utf-8')
 
 		const onData = data => {
-			let response = data.toString();
-			response = response.replace(/[>\r]/g, '').trim();
 
-			if (response.slice(-2) !== 'OK') {
-				log.error(`Error Sending Command: ${cmd}`);
-				reject(response);
-				return;
-			}
+			dataBuffer = Buffer.concat([dataBuffer, Buffer.from(data, 'utf-8')]);
 
-			response = response.replace(/OK$/g, '').trim().split('\n');
-			log.easyDebug(`Successful response (${cmd}):`);
-			log.easyDebug(response);
-			resolve(response);
+			clearTimeout(commandTimeout)
+			commandTimeout = setTimeout(() => {
+				client.removeListener('data', onData);
+				client.removeListener('error', onError);
+
+				let response = dataBuffer.toString();
+				response = response.replace(/[>\r]/g, '').trim();
+	
+				if (response.slice(-2) !== 'OK') {
+					log.error(`Error Sending Command: ${cmd}`);
+					reject(response);
+					return;
+				}
+	
+				response = response.replace(/OK$/g, '').trim().split('\n');
+				log.easyDebug(`Successful response (${cmd}):`);
+				log.easyDebug(response);
+				resolve(response);
+			}, 500)
 		};
 
 		const onError = err => {
 			log.error(`Error Sending Command: ${cmd}`);
+			client.removeListener('data', onData);
+			client.removeListener('error', onError);
 			reject(err.message || err);
 		};
 
 		client.on('data', onData);
 		client.on('error', onError);
 
-		client.write(`${cmd}\n`, () => {
-			client.removeListener('data', onData);
-			client.removeListener('error', onError);
-		});
+		if (!connected || (!client.connecting && !client.writable)) {
+			client.connect(port, ip);
+			client.on('connect', () => {
+				connected = true
+				client.write(`${cmd}\r\n`);
+			})
+		} else {
+			client.write(`${cmd}\r\n`);
+		}
 	});
 };
 

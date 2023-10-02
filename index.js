@@ -99,6 +99,11 @@ class CoolAutomationPlatform {
 				
 			this.API = await API(this)
 
+
+			this.api.on('shutdown', () => {
+				this.API.closeConnection()
+			});
+
 			try {
 				this.devices = await this.API.getDevices()
 				await this.storage.setItem('cool-automation-devices', this.devices)
