@@ -5,9 +5,8 @@
 # homebridge-cool-automation
 
 [![Downloads](https://img.shields.io/npm/dt/homebridge-cool-automation.svg?color=critical)](https://www.npmjs.com/package/homebridge-cool-automation)
-[![Version](https://img.shields.io/npm/v/homebridge-cool-automation)](https://www.npmjs.com/package/homebridge-cool-automation)<br>
-<!-- [![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins) [![Homebridge Discord](https://img.shields.io/discord/432663330281226270?color=728ED5&logo=discord&label=discord)](https://discord.gg/ZX3wSZpXaP)<br>
-[![certified-hoobs-plugin](https://badgen.net/badge/HOOBS/Certified/yellow)](https://plugins.hoobs.org?ref=10876) [![hoobs-support](https://badgen.net/badge/HOOBS/Support/yellow)](https://support.hoobs.org?ref=10876) -->
+[![Version](https://img.shields.io/npm/v/homebridge-cool-automation)](https://www.npmjs.com/package/homebridge-cool-automation)
+[![verified-by-homebridge](https://badgen.net/badge/homebridge/verified/purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
 
 
 [Homebridge](https://github.com/nfarina/homebridge) plugin for Cool Automation - HVAC Systems Controller
