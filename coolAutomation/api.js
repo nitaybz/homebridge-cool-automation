@@ -61,6 +61,7 @@ const sendCommand = function (cmd) {
 				}
 	
 				response = response.replace(/OK$/g, '').trim().split('\n');
+				response = response.filter(item => item !== 'OK');
 				log.easyDebug(`Successful response (${cmd}):`);
 				log.easyDebug(response);
 				resolve(response);
