@@ -31,9 +31,6 @@ module.exports = (device, hubConfig) => {
 
 		set: (state, prop, value) => {
 
-			if (prop in state && state[prop] === value)
-				return
-
 			state[prop] = value
 
 			// Send Reset Filter command and update value
