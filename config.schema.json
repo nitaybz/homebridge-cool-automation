@@ -22,9 +22,7 @@
                         "port": {
                             "title": "Port",
                             "type": "integer",
-                            "default": 10102,
-                            "minimum": 1,
-                            "maximum": 65535
+                            "default": 10102
                         }
                     },
                     "required": ["ip"]

@@ -1,16 +1,17 @@
 const unified = require('../coolAutomation/unified')
 let Characteristic, Service
+		const FAHRENHEIT_UNIT = 'F'
+		const CELSIUS_UNIT = 'C'
 
 class AirConditioner {
 	constructor(device, hubConfig, platform) {
 
 		Service = platform.api.hap.Service
 		Characteristic = platform.api.hap.Characteristic
-		const FAHRENHEIT_UNIT = 'F'
-		const CELSIUS_UNIT = 'C'
 
 		const deviceInfo = unified.deviceInformation(device)
 
+		this.hubNumber = hubConfig.hubNumber
 		this.refreshState = platform.refreshState
 		this.log = platform.log
 		this.api = platform.api
@@ -51,6 +52,7 @@ class AirConditioner {
 			this.accessory = new this.api.platformAccessory(this.name, this.UUID)
 			this.accessory.context.type = this.type
 			this.accessory.context.deviceId = this.id
+			this.accessory.context.hubNumber = this.hubNumber
 
 			hubConfig.cachedAccessories.push(this.accessory)
 			// Register the accessory with Homebridge
