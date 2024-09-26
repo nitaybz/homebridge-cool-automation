@@ -1,4 +1,7 @@
 const net = require('net');
+const { Queue } = require('async-await-queue');
+const myq = new Queue(1, 500);
+const myPriority = -1;
 
 let log, client, port, ip, connected;
 
@@ -33,10 +36,13 @@ module.exports = async function (platform) {
 	};
 };
 
-const sendCommand = function (cmd) {
+const sendCommand = async function (cmd) {
+	const me = Symbol();
+	/* We wait in the line here */
+	await myq.wait(me, myPriority);
+
 	return new Promise((resolve, reject) => {
 		log.easyDebug(`Sending Command: ${cmd}`);
-
 
 		let commandTimeout = null
 
@@ -87,6 +93,8 @@ const sendCommand = function (cmd) {
 		} else {
 			client.write(`${cmd}\r\n`);
 		}
+
+		myq.end(me)
 	});
 };
 

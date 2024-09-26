@@ -56,14 +56,14 @@
                 "title": "FAN",
                 "description": "Creates extra fan accessory",
                 "type": "boolean",
-                "default": true,
+                "default": false,
                 "required": true
             },
             "dryMode": {
                 "title": "DRY",
                 "description": "Creates extra dehumidifier accessory",
                 "type": "boolean",
-                "default": true,
+                "default": false,
                 "required": true
             },
             "vlowFspeed": {
