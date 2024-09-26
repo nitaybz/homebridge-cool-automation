@@ -230,8 +230,10 @@ module.exports = (device, platform) => {
 					const mode = characteristicToMode(lastMode)
 					log.easyDebug(device.name + ' -> Setting Mode to', mode)
 					device.state.mode = mode
-				} else if (device.state.mode === 'COOL' || device.state.mode === 'HEAT' || device.state.mode === 'AUTO')
+				} else if (device.state.mode === 'COOL' || device.state.mode === 'HEAT' || device.state.mode === 'AUTO') {
 					device.state.active = false
+					device.blockTurningOn = true
+				}
 
 				callback()
 			},

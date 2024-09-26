@@ -63,6 +63,11 @@ module.exports = (device, hubConfig) => {
 					preventTurningOff = false
 				}
 
+				if (device.blockTurningOn) {
+					state.active = false
+					device.blockTurningOn = false
+				}
+
 				const newState = unified.formattedState(device, state)
 				log(device.name, ' -> Setting New State:')
 				log(JSON.stringify(newState, null, 2))
