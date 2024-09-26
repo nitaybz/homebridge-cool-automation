@@ -43,7 +43,12 @@ Otherwise, follow these instructions
 "platforms": [
     {
         "platform": "CoolAutomation",
-        "ip": "192.168.X.X"
+        "hubs": [
+            {
+                "ip": "192.168.1.100",
+                "port": 10102
+            }
+        ],
     }
 ]
 ```
@@ -54,7 +59,16 @@ Otherwise, follow these instructions
 "platforms": [
     {
         "platform": "CoolAutomation",
-        "ip": "192.168.X.X",
+        "hubs": [
+            {
+                "ip": "192.168.1.100",
+                "port": 10102
+            },
+            {
+                "ip": "192.168.1.101",
+                "port": 10102
+            }
+        ],
         "statePollingInterval": 30,
         "minTemperature": 16,
         "maxTemperature": 30,
@@ -72,30 +86,43 @@ Otherwise, follow these instructions
         "debug": false
     }
 ]
+
 ```
 
 
-### Configurations Table
+*Only `ip` and `port` are device-specific settings. All other settings are platform-wide.*
 
-|             Parameter            |                       Description                       | Required |  Default |   type   |
-| -------------------------------- | ------------------------------------------------------- |:--------:|:--------:|:--------:|
-| `platform`                       | always "cool-automation"                                |     ✓    |     -    |  String  |
-| `ip`                             | IP Address of the CoolAutomation hub                    |     ✓    |     -    |  String  |
-| `statePollingInterval`          | Time in seconds between each status polling of the Electra devices  |          |  `30` |  Integer |
-| `minTemperature`               |  Minimum Temperature to show in HomeKit Control (supports fahrenheit)|          |  `16` |  Integer |
-| `maxTemperature`               |  Maximum Temperature to show in HomeKit Control (supports fahrenheit)|          |  `30` |  Integer |
-| `coolMode`                     |  Enable COOL mode control                                 |          |   true   |  Boolean |
-| `heatMode`                     |  Enable HEAT mode control                                 |          |   true   |  Boolean |
-| `autoMode`                     |  Enable AUTO mode control                                 |          |   true   |  Boolean |
-| `fanMode`                      |  Enable FAN mode control - Adds extra fan accessory       |          |   true   |  Boolean |
-| `dryMode`                   |  Enable DRY mode control - Adds extra dehumidifier accessory |          |   true   |  Boolean |
-| `vlowFspeed`                   |  Support "Very-Low/Quite" fan speed                       |          |   true   |  Boolean |
-| `lowFspeed`                    |  Support "Low" fan speed                                  |          |   true   |  Boolean |
-| `medFspeed`                    |  Support "Medium" fan speed                               |          |   true   |  Boolean |
-| `highFspeed`                   |  Support "High" fan speed                                 |          |   true   |  Boolean |
-| `topFspeed`                    |  Support "Very-High/Top" fan speed                        |          |   true   |  Boolean |
-| `autoFspeed`                   |  Support "Auto" fan speed                                 |          |   true   |  Boolean |
-| `debug` |  When set to `true`, the plugin will produce extra logs for debugging purposes   |          |  `false` |  Boolean |
+## Configuration Parameters
+
+### Platform-wide Settings
+
+| Parameter               | Description                                                | Required | Default | Type    |
+|-------------------------|------------------------------------------------------------|----------|---------|---------|
+| `statePollingInterval`  | Time in seconds between each status polling of the devices  | No       | 30      | Integer |
+| `minTemperature`        | Minimum Temperature to show in HomeKit Control             | No       | 16      | Integer |
+| `maxTemperature`        | Maximum Temperature to show in HomeKit Control             | No       | 30      | Integer |
+| `coolMode`              | Enable COOL mode control                                   | No       | true    | Boolean |
+| `heatMode`              | Enable HEAT mode control                                   | No       | true    | Boolean |
+| `autoMode`              | Enable AUTO mode control                                   | No       | false   | Boolean |
+| `fanMode`               | Enable FAN mode control - Adds extra fan accessory          | No       | true    | Boolean |
+| `dryMode`               | Enable DRY mode control - Adds extra dehumidifier accessory | No       | true    | Boolean |
+| `vlowFspeed`            | VLOW Fan Speed                                             | No       | false   | Boolean |
+| `lowFspeed`             | LOW Fan Speed                                              | No       | true    | Boolean |
+| `medFspeed`             | MED Fan Speed                                              | No       | true    | Boolean |
+| `highFspeed`            | HIGH Fan Speed                                             | No       | true    | Boolean |
+| `topFspeed`             | TOP Fan Speed                                              | No       | false   | Boolean |
+| `autoFspeed`            | AUTO Fan Speed                                             | No       | true    | Boolean |
+| `debug`                 | Enable Debug Logging                                      | No       | false   | Boolean |
+
+### Hub-specific Settings
+
+| Parameter | Description        | Required | Default | Type    |
+|-----------|--------------------|----------|---------|---------|
+| `ip`      | IP Address of the Cool Master Device | Yes      | -       | String  |
+| `port`    | Port number for communication        | No       | 10102   | Integer |
+
+> **Important**: Only `ip` and `port` are hub-specific settings. All other configurations are platform-wide and apply to all hubs.
+
 
 ### Fan speeds & "AUTO" speed
 Since HomeKit control over fan speed is with a slider between 0-100, the plugin converts the steps you have in the Electra app to values between 1 to 100, when 100 is highest and 1 is lowest. Setting the fan speed to 0, should actually set it to "AUTO" speed.

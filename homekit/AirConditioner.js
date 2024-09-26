@@ -1,47 +1,50 @@
 const unified = require('../coolAutomation/unified')
-let Characteristic, Service, FAHRENHEIT_UNIT, CELSIUS_UNIT
+let Characteristic, Service
 
 class AirConditioner {
-	constructor(device, platform) {
+	constructor(device, hubConfig, platform) {
 
 		Service = platform.api.hap.Service
 		Characteristic = platform.api.hap.Characteristic
-		FAHRENHEIT_UNIT = platform.FAHRENHEIT_UNIT
-		CELSIUS_UNIT = platform.CELSIUS_UNIT
+		const FAHRENHEIT_UNIT = 'F'
+		const CELSIUS_UNIT = 'C'
 
 		const deviceInfo = unified.deviceInformation(device)
-		
+
+		this.refreshState = platform.refreshState
 		this.log = platform.log
 		this.api = platform.api
-		this.storage = platform.storage
-		this.cachedState = platform.cachedState
+		this.coolAutomationAPI = hubConfig.API
+		this.storage = hubConfig.storage
+		this.cachedState = hubConfig.cachedState
 		this.id = deviceInfo.id
 		this.model = deviceInfo.model
 		this.serial = deviceInfo.serial
 		this.manufacturer = deviceInfo.manufacturer
 		this.roomName = deviceInfo.roomName
-		this.name = this.roomName + ' AC' 
+		this.name = `${this.roomName} AC`
 		this.type = 'AirConditioner'
 		this.displayName = this.name
 		this.temperatureUnit = deviceInfo.temperatureUnit
 		this.usesFahrenheit = this.temperatureUnit === FAHRENHEIT_UNIT
-		this.disableFan = platform.disableFan
-		this.disableDry = platform.disableDry
+		this.disableFan = !platform.fanMode
+		this.disableDry = !platform.dryMode
 		this.swingDirection = platform.swingDirection
 		this.minTemp = platform.minTemp
 		this.maxTemp = platform.maxTemp
 		this.filterService = deviceInfo.filterService
 		this.capabilities = unified.capabilities(platform, device)
 
+		// Initialize state
 		this.state = this.cachedState.devices[this.id] = unified.acState(this, device)
-		
-		const StateHandler = require('../coolAutomation/StateHandler')(this, platform)
-		this.state = new Proxy(this.state, StateHandler)
 
+		const StateHandler = require('../coolAutomation/StateHandler')(this, hubConfig)
+		this.state = new Proxy(this.state, StateHandler)
 		this.stateManager = require('./StateManager')(this, platform)
 
+		// Generate UUID using Homebridge API
 		this.UUID = this.api.hap.uuid.generate(this.id.toString())
-		this.accessory = platform.cachedAccessories.find(accessory => accessory.UUID === this.UUID)
+		this.accessory = hubConfig.cachedAccessories.find(accessory => accessory.UUID === this.UUID)
 
 		if (!this.accessory) {
 			this.log(`Creating New ${platform.PLATFORM_NAME} ${this.type} Accessory in the ${this.roomName}`)
@@ -49,8 +52,8 @@ class AirConditioner {
 			this.accessory.context.type = this.type
 			this.accessory.context.deviceId = this.id
 
-			platform.cachedAccessories.push(this.accessory)
-			// register the accessory
+			hubConfig.cachedAccessories.push(this.accessory)
+			// Register the accessory with Homebridge
 			this.api.registerPlatformAccessories(platform.PLUGIN_NAME, platform.PLATFORM_NAME, [this.accessory])
 		}
 
@@ -65,8 +68,8 @@ class AirConditioner {
 			.setCharacteristic(Characteristic.Manufacturer, this.manufacturer)
 			.setCharacteristic(Characteristic.Model, this.model)
 			.setCharacteristic(Characteristic.SerialNumber, this.UUID)
-			
-			
+
+
 
 		this.addHeaterCoolerService()
 
@@ -84,7 +87,7 @@ class AirConditioner {
 	}
 
 	addHeaterCoolerService() {
-		
+
 		this.log.easyDebug(`Adding HeaterCooler Service in the ${this.roomName}`)
 		this.HeaterCoolerService = this.accessory.getService(Service.HeaterCooler)
 		if (!this.HeaterCoolerService)
@@ -105,9 +108,9 @@ class AirConditioner {
 		if (this.capabilities.COOL) props.push(Characteristic.TargetHeaterCoolerState.COOL)
 		if (this.capabilities.HEAT) props.push(Characteristic.TargetHeaterCoolerState.HEAT)
 		if (this.capabilities.AUTO) props.push(Characteristic.TargetHeaterCoolerState.AUTO)
-	
+
 		this.HeaterCoolerService.getCharacteristic(Characteristic.TargetHeaterCoolerState)
-			.setProps({validValues: props})
+			.setProps({ validValues: props })
 			.on('get', this.stateManager.get.TargetHeaterCoolerState)
 			.on('set', this.stateManager.set.TargetHeaterCoolerState)
 			.updateValue(props[0])
@@ -185,7 +188,7 @@ class AirConditioner {
 				.updateValue(0)
 		}
 
-		if (	(this.capabilities.COOL && this.capabilities.COOL.fanSpeeds) || (this.capabilities.HEAT && this.capabilities.HEAT.fanSpeeds)) {
+		if ((this.capabilities.COOL && this.capabilities.COOL.fanSpeeds) || (this.capabilities.HEAT && this.capabilities.HEAT.fanSpeeds)) {
 			this.HeaterCoolerService.getCharacteristic(Characteristic.RotationSpeed)
 				.on('get', this.stateManager.get.ACRotationSpeed)
 				.on('set', this.stateManager.set.ACRotationSpeed)
@@ -195,7 +198,7 @@ class AirConditioner {
 		if (this.filterService) {
 			this.HeaterCoolerService.getCharacteristic(Characteristic.FilterChangeIndication)
 				.on('get', this.stateManager.get.FilterChangeIndication)
-	
+
 			this.HeaterCoolerService.getCharacteristic(Characteristic.FilterLifeLevel)
 				.on('get', this.stateManager.get.FilterLifeLevel)
 
@@ -241,7 +244,7 @@ class AirConditioner {
 			this.accessory.removeService(FanService)
 		}
 	}
-	
+
 	addDryService() {
 		this.log.easyDebug(`Adding Dehumidifier Service in the ${this.roomName}`)
 
@@ -429,14 +432,14 @@ class AirConditioner {
 		this.storage.setItem('cool-automation-state', this.cachedState)
 	}
 
-	updateValue (serviceName, characteristicName, newValue) {
+	updateValue(serviceName, characteristicName, newValue) {
 		if (this[serviceName].getCharacteristic(Characteristic[characteristicName]).value !== newValue) {
 			this[serviceName].getCharacteristic(Characteristic[characteristicName]).updateValue(newValue)
 			this.log.easyDebug(`${this.roomName} - Updated '${characteristicName}' for ${serviceName} with NEW VALUE: ${newValue}`)
 		}
 	}
 
-	
+
 }
 
 

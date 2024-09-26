@@ -5,10 +5,10 @@ const myPriority = -1;
 
 let log, client, port, ip, connected;
 
-module.exports = async function (platform) {
-	log = platform.log;
-	port = platform.port || 10102
-	ip = platform.ip
+module.exports = function (hubConfig, platformLog) {
+	log = platformLog;
+	port = hubConfig.port || 10102
+	ip = hubConfig.ip
 
 
 	client = new net.Socket();

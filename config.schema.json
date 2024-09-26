@@ -7,32 +7,50 @@
     "schema": {
         "type": "object",
         "properties": {
-            "ip": {
-              "title": "IP Address",
-              "type": "string",
-              "required": true
+            "hubs": {
+                "type": "array",
+                "title": "CoolMaster Hub",
+                "description": "List of CoolMaster Hub to integrate with Homebridge. If not provided, the plugin will use the top-level IP and port for a single device.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "ip": {
+                            "title": "IP Address",
+                            "type": "string",
+                            "required": true
+                        },
+                        "port": {
+                            "title": "Port",
+                            "type": "integer",
+                            "default": 10102,
+                            "minimum": 1,
+                            "maximum": 65535
+                        }
+                    },
+                    "required": ["ip"]
+                }
             },
-			"statePollingInterval": {
-				"title": "AC Device Status Polling Interval in Seconds",
-				"description": "Time in seconds between each status polling of the devices",
-				"default": 30,
-				"type": "integer",
-				"minimum": 5,
-				"maximum": 300
-			},
+            "statePollingInterval": {
+                "title": "AC Device Status Polling Interval in Seconds",
+                "description": "Time in seconds between each status polling of the devices",
+                "default": 30,
+                "type": "integer",
+                "minimum": 5,
+                "maximum": 300
+            },
             "minTemperature": {
                 "title": "Minimum Temperature",
-				"default": 16,
-				"type": "integer",
-				"minimum": 10,
-				"maximum": 95
+                "default": 16,
+                "type": "integer",
+                "minimum": 10,
+                "maximum": 95
             },
             "maxTemperature": {
                 "title": "Maximum Temperature",
-				"default": 30,
-				"type": "integer",
-				"minimum": 10,
-				"maximum": 95
+                "default": 30,
+                "type": "integer",
+                "minimum": 10,
+                "maximum": 95
             },
             "coolMode": {
                 "title": "COOL",
@@ -111,19 +129,27 @@
             }
         }
     },
-	"layout": [
-		{
-			"key": "ip"
-		},
-		{
-			"key": "debug"
-		},
+	"layout": [   
+        {
+        "key": "hubs",
+        "type": "array",
+        "title": "CoolMaster Hub",
+        "orderable": false,
+        "buttonText": "Add CoolMaster",
+        "expandable": true,
+        "expanded": true,
+        "items": [
+            "hubs[].ip",
+            "hubs[].port"
+            ]
+        },
 		{
 			"type": "fieldset",
 			"expandable": true,
 			"title": "Advanced Settings",
 			"description": "Don't change these, unless you understand what you're doing.",
 			"items": [
+                "debug",
 				"statePollingInterval",
 				"minTemperature",
 				"maxTemperature",

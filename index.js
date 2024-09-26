@@ -1,128 +1,137 @@
 const API = require('./coolAutomation/api')
-const syncHomeKitCache = require('./coolAutomation/syncHomeKitCache')
-const refreshState = require('./coolAutomation/refreshState')
+const SyncHomeKitCache = require('./coolAutomation/syncHomeKitCache')
+const RefreshState = require('./coolAutomation/refreshState')
 const path = require('path')
 const storage = require('node-persist')
 const PLUGIN_NAME = 'homebridge-cool-automation'
 const PLATFORM_NAME = 'CoolAutomation'
 
 module.exports = (api) => {
-	api.registerPlatform(PLUGIN_NAME, PLATFORM_NAME, CoolAutomationPlatform)
+    api.registerPlatform(PLUGIN_NAME, PLATFORM_NAME, CoolAutomationPlatform)
 }
 
 class CoolAutomationPlatform {
-	constructor(log, config, api) {
+    constructor(log, config, api) {
+				this.PLUGIN_NAME = PLUGIN_NAME
+				this.PLATFORM_NAME = PLATFORM_NAME
+        this.log = log
+        this.api = api
+        this.storage = storage
+        this.refreshState = RefreshState(this)
+        this.syncHomeKitCache = SyncHomeKitCache(this)
+        this.debug = config['debug'] || false
 
-		this.cachedAccessories = []
-		this.activeAccessories = []
-		this.log = log
-		this.api = api
-		this.storage = storage
-		this.refreshState = refreshState(this)
-		this.syncHomeKitCache = syncHomeKitCache(this)
-		this.name = config['name'] || PLATFORM_NAME
-		this.disableFan = config['disableFan'] || false
-		this.disableDry = config['disableDry'] || false
-		this.swingDirection = config['swingDirection'] || 'both'
-		this.minTemp = config['minTemperature'] || 16
-		this.maxTemp = config['maxTemperature'] || 30
-		this.coolMode = config['coolMode']
-		this.heatMode = config['heatMode']
-		this.autoMode = config['autoMode'] 
-		this.fanMode = config['fanMode']
-		this.dryMode = config['dryMode']
-		this.vlowFspeed = config['vlowFspeed'] 
-		this.lowFspeed = config['lowFspeed']
-		this.medFspeed = config['medFspeed']
-		this.highFspeed = config['highFspeed']
-		this.topFspeed = config['topFspeed'] 
-		this.autoFspeed = config['autoFspeed']
+        // Initialize storage path
+        this.persistPath = path.join(this.api.user.persistPath(), '/../cool-automation-persist')
 
+        // Platform-wide settings
+        this.statePollingInterval = config['statePollingInterval'] || 30
+        if (this.statePollingInterval < 5) 
+            this.statePollingInterval = 5
+        this.minTemp = config['minTemperature'] || 16
+        this.maxTemp = config['maxTemperature'] || 30
+        this.coolMode = config['coolMode']
+        this.heatMode = config['heatMode']
+        this.autoMode = config['autoMode']
+        this.fanMode = config['fanMode']
+        this.dryMode = config['dryMode']
+        this.vlowFspeed = config['vlowFspeed']
+        this.lowFspeed = config['lowFspeed']
+        this.medFspeed = config['medFspeed']
+        this.highFspeed = config['highFspeed']
+        this.topFspeed = config['topFspeed']
+        this.autoFspeed = config['autoFspeed']
 
-		this.debug = config['debug'] || false
-		this.PLUGIN_NAME = PLUGIN_NAME
-		this.PLATFORM_NAME = PLATFORM_NAME
+        // Define debug method
+        this.log.easyDebug = (...content) => {
+            if (this.debug) {
+                this.log(content.join(' '))
+            } else {
+                this.log.debug(content.join(' '))
+            }
+        }
 
-		// ~~~~~~~~~~~~~~~~~~~~~ Cool Automation Specials ~~~~~~~~~~~~~~~~~~~~~ //
-		
-		this.ip = config['ip']
-		this.port = config['port']
-		
-		if (!this.ip) {
-			this.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX  --  ERROR  --  XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n')
-			this.log('Can\'t start homebridge-cool-automation plugin without the device IP Address !!\n')
-			this.log('XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n')
-			return
-		}
+        // Initialize multiple hubs
+        this.hubs = []
+        if (Array.isArray(config.hubs) && config.hubs.length > 0) {
+            // Multiple Hubs Configuration
+            config.hubs.forEach((hubConfig, index) => {
+                this.initializeHub(hubConfig, index + 1)
+            })
+        } else if (config.ip) {
+            // Single Hub Configuration (Backward Compatibility)
+            this.initializeHub({ ip: config.ip, port: config.port }, 1)
+        } else {
+            this.log.error('No valid configuration found for CoolAutomation platform.')
+        }
+    }
 
+    initializeHub(hubConfig, hubNumber) {
+        this.log(`Initializing Cool Master Device Hub ${hubNumber} with IP: ${hubConfig.ip}`)
 
-		this.persistPath = path.join(this.api.user.persistPath(), '/../cool-automation-persist')
-		this.emptyState = {devices:{}}
-		this.CELSIUS_UNIT = 'C'
-		this.FAHRENHEIT_UNIT = 'F'
-		let requestedInterval = config['statePollingInterval'] === 0 ? 0 : (config['statePollingInterval'] || 30) // default polling time is 30 seconds
-		if (requestedInterval < 5) 
-			requestedInterval = 5
-		this.refreshDelay = 2000
-		this.locations = []
+        // Assign hub number for identification
+        hubConfig.hubNumber = hubNumber
 
-		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+        // Initialize storage for the hub
+        const hubPersistPath = path.join(this.persistPath, `hub_${hubNumber}`)
+        hubConfig.persistPath = hubPersistPath
+        hubConfig.emptyState = { devices: {} }
 
-		this.setProcessing = false
-		this.pollingTimeout = null
-		this.processingState = false
-		this.pollingInterval = requestedInterval ? (requestedInterval * 1000 - this.refreshDelay) : false
+        // Initialize storage
+        hubConfig.storage = storage.create({
+            dir: hubPersistPath,
+            forgiveParseErrors: true
+        })
 
-		// define debug method to output debug logs when enabled in the config
-		this.log.easyDebug = (...content) => {
-			if (this.debug) {
-				this.log(content.reduce((previous, current) => {
-					return previous + ' ' + current
-				}))
-			} else
-				this.log.debug(content.reduce((previous, current) => {
-					return previous + ' ' + current
-				}))
-		}
-		
-		this.api.on('didFinishLaunching', async () => {
+        // Initialize cached state
+        hubConfig.storage.init().then(async () => {
+            hubConfig.cachedState = await hubConfig.storage.getItem('cool-automation-state') || hubConfig.emptyState
+            if (!hubConfig.cachedState.devices)
+                hubConfig.cachedState = hubConfig.emptyState
 
-			await this.storage.init({
-				dir: this.persistPath,
-				forgiveParseErrors: true
-			})
+            // Initialize CoolAutomation API
+            hubConfig.API = API(hubConfig, this.log)
 
+            // Handle shutdown for each hub
+            this.api.on('shutdown', () => {
+                if (hubConfig.API && hubConfig.API.closeConnection) {
+                    hubConfig.API.closeConnection()
+                }
+            })
 
-			this.cachedState = await this.storage.getItem('cool-automation-state') || this.emptyState
-			if (!this.cachedState.devices)
-				this.cachedState = this.emptyState
-				
-			this.API = await API(this)
+            // Fetch devices
+            try {
+                hubConfig.devices = await hubConfig.API.getDevices()
+                await hubConfig.storage.setItem('cool-automation-devices', hubConfig.devices)
+            } catch (err) {
+                this.log.error(`Cool Master Device Hub ${hubNumber}: Error fetching devices - ${err}`)
+                hubConfig.devices = await hubConfig.storage.getItem('cool-automation-devices') || []
+            }
 
+            // Initialize active and cached accessories
+            hubConfig.cachedAccessories = []
+            hubConfig.activeAccessories = []
 
-			this.api.on('shutdown', () => {
-				this.API.closeConnection()
-			});
+            // Sync HomeKit cache
+            this.syncHomeKitCache()
 
-			try {
-				this.devices = await this.API.getDevices()
-				await this.storage.setItem('cool-automation-devices', this.devices)
-			} catch(err) {
-				this.log('ERR:', err)
-				this.devices = await this.storage.getItem('cool-automation-devices') || []
-			}
-			
-			this.syncHomeKitCache()
+            // Start polling if enabled
+            if (this.statePollingInterval) {
+                hubConfig.pollingTimeout = setTimeout(this.refreshState, this.statePollingInterval * 1000)
+            }
 
-			if (this.pollingInterval)
-				this.pollingTimeout = setTimeout(this.refreshState, this.pollingInterval)
-			
-		})
+        }).catch(err => {
+            this.log.error(`Cool Master Device Hub ${hubNumber}: Error initializing storage - ${err}`)
+        })
 
-	}
+        // Add hub to hubs array
+        this.hubs.push(hubConfig)
+    }
 
-	configureAccessory(accessory) {
-		this.cachedAccessories.push(accessory)
-	}
-
+    configureAccessory(accessory) {
+        // Assign accessory to all hubs (if applicable)
+        this.hubs.forEach(hub => {
+            hub.cachedAccessories.push(accessory)
+        })
+    }
 }

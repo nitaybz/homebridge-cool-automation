@@ -1,25 +1,25 @@
 const unified = require('./unified')
 
-module.exports = (device, platform) => {
+module.exports = (device, hubConfig) => {
 
 	const setTimeoutDelay = 600
 	let setTimer = null
 	let preventTurningOff = false
-	const API = platform.API
+	const API = device.coolAutomationAPI
 
-	const log = platform.log
+	const log = device.log
 	// const state = device.state
 
 	return {
 		get: (target, prop) => {
 			// check for last update and refresh state if needed
-			if (!platform.setProcessing)
-				platform.refreshState()
+			if (!hubConfig.setProcessing)
+				device.refreshState()
 
 			// return a function to update state (multiple properties)
 			if (prop === 'update')
 				return (state) => {
-					if (!platform.setProcessing) {
+					if (!hubConfig.setProcessing) {
 						Object.keys(state).forEach(key => { target[key] = state[key] })
 						device.updateHomeKit()
 					}
@@ -48,7 +48,7 @@ module.exports = (device, platform) => {
 			// 	return
 
 
-			platform.setProcessing = true
+			hubConfig.setProcessing = true
 
 			// Make sure device is not turning off when setting fanSpeed to 0 (AUTO)
 			if (prop === 'fanSpeed' && value === 0 && device.capabilities[state.mode].autoFanSpeed)
@@ -74,16 +74,16 @@ module.exports = (device, platform) => {
 					log(`ERROR setting ${prop} to ${value}`)
 					log(err)
 					setTimeout(() => {
-						platform.setProcessing = false
-						platform.refreshState()
+						hubConfig.setProcessing = false
+						device.refreshState()
 					}, 1000)
 					return
 				}
 				setTimeout(() => {
 					device.updateHomeKit()
 					setTimeout(() => {
-						platform.setProcessing = false
-						platform.refreshState()
+						hubConfig.setProcessing = false
+						device.refreshState()
 					}, 5000)
 				}, 500)
 

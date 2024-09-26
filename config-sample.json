@@ -5,12 +5,20 @@
     "port": 51826,
     "pin": "031-45-154"
   },
-
   "description": "This is an example configuration for the cool-automation homebridge plugin",
   "platforms": [
     {
       "platform": "CoolAutomation",
-      "ip": "192.168.X.X",
+      "hubs": [
+        {
+          "ip": "192.168.1.100",
+          "port": 10102
+        },
+        {
+          "ip": "192.168.1.101",
+          "port": 10102
+        }
+      ],
       "statePollingInterval": 30,
       "minTemperature": 16,
       "maxTemperature": 30,
@@ -28,7 +36,5 @@
       "debug": false
     }
   ],
-
-  "accessories": [
-  ]
+  "accessories": []
 }
