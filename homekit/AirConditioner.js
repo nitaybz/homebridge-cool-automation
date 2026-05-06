@@ -2,7 +2,7 @@ const unified = require('../coolAutomation/unified')
 let Characteristic, Service
 		const FAHRENHEIT_UNIT = 'F'
 		const CELSIUS_UNIT = 'C'
-
+		const FAHRENHEIT_MIN_STEP = 0.1
 class AirConditioner {
 	constructor(device, hubConfig, platform) {
 
@@ -35,6 +35,8 @@ class AirConditioner {
 		this.maxTemp = platform.maxTemp
 		this.filterService = deviceInfo.filterService
 		this.capabilities = unified.capabilities(platform, device)
+		this.celsiusHalfSteps = platform.celsiusHalfSteps
+		this.celsiusMinStep = this.celsiusHalfSteps ? 0.5 : 1
 
 		// Initialize state
 		this.state = this.cachedState.devices[this.id] = unified.acState(this, device)
@@ -43,8 +45,27 @@ class AirConditioner {
 		this.state = new Proxy(this.state, StateHandler)
 		this.stateManager = require('./StateManager')(this, platform)
 
-		// Generate UUID using Homebridge API
-		this.UUID = this.api.hap.uuid.generate(this.id.toString())
+		// Generate UUID using Homebridge API.
+		// Include celsiusHalfSteps so HomeKit treats it as a new accessory when this setting changes.
+		const uuidKey = `${this.id}:${this.celsiusHalfSteps ? 'celsius-0.5' : 'celsius-1'}`
+		this.UUID = this.api.hap.uuid.generate(uuidKey)
+
+		// If an accessory exists for this device with a different UUID, remove it to avoid duplicates.
+		const existingForDevice = hubConfig.cachedAccessories.find(accessory =>
+			accessory.context?.type === 'AirConditioner' &&
+			accessory.context?.deviceId === this.id
+		)
+		if (existingForDevice && existingForDevice.UUID !== this.UUID) {
+			this.log.easyDebug(
+				`celsiusHalfSteps changed for ${this.roomName}; re-registering accessory to refresh HomeKit metadata`
+			)
+			platform.api.unregisterPlatformAccessories(platform.PLUGIN_NAME, platform.PLATFORM_NAME, [existingForDevice])
+			const index = hubConfig.cachedAccessories.indexOf(existingForDevice)
+			if (index > -1) {
+				hubConfig.cachedAccessories.splice(index, 1)
+			}
+		}
+
 		this.accessory = hubConfig.cachedAccessories.find(accessory => accessory.UUID === this.UUID)
 
 		if (!this.accessory) {
@@ -53,6 +74,7 @@ class AirConditioner {
 			this.accessory.context.type = this.type
 			this.accessory.context.deviceId = this.id
 			this.accessory.context.hubNumber = this.hubNumber
+			this.accessory.context.celsiusHalfSteps = this.celsiusHalfSteps
 
 			hubConfig.cachedAccessories.push(this.accessory)
 			// Register the accessory with Homebridge
@@ -60,6 +82,7 @@ class AirConditioner {
 		}
 
 		this.accessory.context.roomName = this.roomName
+		this.accessory.context.celsiusHalfSteps = this.celsiusHalfSteps
 
 		let informationService = this.accessory.getService(Service.AccessoryInformation)
 
@@ -132,7 +155,7 @@ class AirConditioner {
 				.setProps({
 					minValue: this.capabilities.COOL.temperatures[CELSIUS_UNIT].min,
 					maxValue: this.capabilities.COOL.temperatures[CELSIUS_UNIT].max,
-					minStep: this.usesFahrenheit ? 0.1 : 1
+					minStep: this.usesFahrenheit ? FAHRENHEIT_MIN_STEP : this.celsiusMinStep
 				})
 				.on('get', this.stateManager.get.CoolingThresholdTemperature)
 				.on('set', this.stateManager.set.CoolingThresholdTemperature)
@@ -144,7 +167,7 @@ class AirConditioner {
 				.setProps({
 					minValue: this.capabilities.HEAT.temperatures[CELSIUS_UNIT].min,
 					maxValue: this.capabilities.HEAT.temperatures[CELSIUS_UNIT].max,
-					minStep: this.usesFahrenheit ? 0.1 : 1
+					minStep: this.usesFahrenheit ? FAHRENHEIT_MIN_STEP : this.celsiusMinStep
 				})
 				.on('get', this.stateManager.get.HeatingThresholdTemperature)
 				.on('set', this.stateManager.set.HeatingThresholdTemperature)
@@ -156,7 +179,7 @@ class AirConditioner {
 				.setProps({
 					minValue: this.capabilities.AUTO.temperatures[CELSIUS_UNIT].min,
 					maxValue: this.capabilities.AUTO.temperatures[CELSIUS_UNIT].max,
-					minStep: this.usesFahrenheit ? 0.1 : 1
+					minStep: this.usesFahrenheit ? FAHRENHEIT_MIN_STEP : this.celsiusMinStep
 				})
 				.on('get', this.stateManager.get.CoolingThresholdTemperature)
 				.on('set', this.stateManager.set.CoolingThresholdTemperature)
@@ -169,7 +192,7 @@ class AirConditioner {
 				.setProps({
 					minValue: this.capabilities.AUTO.temperatures[CELSIUS_UNIT].min,
 					maxValue: this.capabilities.AUTO.temperatures[CELSIUS_UNIT].max,
-					minStep: this.usesFahrenheit ? 0.1 : 1
+					minStep: this.usesFahrenheit ? FAHRENHEIT_MIN_STEP : this.celsiusMinStep
 				})
 				.on('get', this.stateManager.get.HeatingThresholdTemperature)
 				.on('set', this.stateManager.set.HeatingThresholdTemperature)

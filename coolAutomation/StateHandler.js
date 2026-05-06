@@ -5,6 +5,7 @@ module.exports = (device, hubConfig) => {
 	const setTimeoutDelay = 600
 	let setTimer = null
 	let preventTurningOff = false
+	let pendingChanges = new Set()
 	const API = device.coolAutomationAPI
 
 	const log = device.log
@@ -32,6 +33,7 @@ module.exports = (device, hubConfig) => {
 		set: (state, prop, value) => {
 
 			state[prop] = value
+			pendingChanges.add(prop)
 
 			// Send Reset Filter command and update value
 			// if (prop === 'filterChange') {
@@ -48,7 +50,12 @@ module.exports = (device, hubConfig) => {
 			hubConfig.setProcessing = true
 
 			// Make sure device is not turning off when setting fanSpeed to 0 (AUTO)
-			if (prop === 'fanSpeed' && value === 0 && device.capabilities[state.mode].autoFanSpeed)
+			if (
+				prop === 'fanSpeed'
+				&& value === 0
+				&& device.capabilities[state.mode]
+				&& device.capabilities[state.mode].autoFanSpeed
+			)
 				preventTurningOff = true
 
 
@@ -65,7 +72,15 @@ module.exports = (device, hubConfig) => {
 					device.blockTurningOn = false
 				}
 
-				const newState = unified.formattedState(device, state)
+				// Snapshot the fields that the user actually changed in this
+				// debounce window, so unified.formattedState can avoid sending
+				// commands for fields that were not touched (e.g. clobbering
+				// fanSpeed back to AUTO when the user only changed temperature
+				// via Siri, see #21).
+				const changedProps = new Set(pendingChanges)
+				pendingChanges = new Set()
+
+				const newState = unified.formattedState(device, state, changedProps)
 				log(device.name, ' -> Setting New State:')
 				log(JSON.stringify(newState, null, 2))
 

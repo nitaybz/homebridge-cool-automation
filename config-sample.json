@@ -33,7 +33,8 @@
       "highFspeed": true,
       "topFspeed": false,
       "autoFspeed": true,
-      "debug": false
+      "debug": false,
+      "celsiusHalfSteps": false
     }
   ],
   "accessories": []

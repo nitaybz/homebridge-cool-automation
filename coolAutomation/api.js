@@ -23,10 +23,16 @@ module.exports = function (hubConfig, platformLog) {
 		},
 
 		setState: (uid, state) => {
-			return sendCommand(`${state.onoff.toLowerCase()} ${uid}`)
+			let chain = sendCommand(`${state.onoff.toLowerCase()} ${uid}`)
 				.then(() => sendCommand(`${state.mode.toLowerCase()} ${uid}`))
-				.then(() => sendCommand(`temp ${uid} ${state.st}`))
-				.then(() => sendCommand(`fspeed ${uid} ${state.fspeed[0].toLowerCase()}`));
+				.then(() => sendCommand(`temp ${uid} ${state.st}`));
+			// Only send fspeed when the formattedState explicitly included it,
+			// otherwise we would clobber a fan speed the user did not touch
+			// (closes #21).
+			if (typeof state.fspeed === 'string' && state.fspeed.length > 0) {
+				chain = chain.then(() => sendCommand(`fspeed ${uid} ${state.fspeed[0].toLowerCase()}`));
+			}
+			return chain;
 		},
 
 		closeConnection: () => {
@@ -41,61 +47,73 @@ const sendCommand = async function (cmd) {
 	/* We wait in the line here */
 	await myq.wait(me, myPriority);
 
-	return new Promise((resolve, reject) => {
-		log.easyDebug(`Sending Command: ${cmd}`);
+	try {
+		return await new Promise((resolve, reject) => {
+			log.easyDebug(`Sending Command: ${cmd}`);
 
-		let commandTimeout = null
+			let commandTimeout = null
 
-		let dataBuffer = Buffer.from('', 'utf-8')
+			let dataBuffer = Buffer.from('', 'utf-8')
 
-		const onData = data => {
-
-			dataBuffer = Buffer.concat([dataBuffer, Buffer.from(data, 'utf-8')]);
-
-			clearTimeout(commandTimeout)
-			commandTimeout = setTimeout(() => {
+			const cleanup = () => {
 				client.removeListener('data', onData);
 				client.removeListener('error', onError);
+				clearTimeout(commandTimeout)
+			}
 
-				let response = dataBuffer.toString();
-				response = response.replace(/[>\r]/g, '').trim();
-	
-				if (response.slice(-2) !== 'OK') {
-					log.error(`Error Sending Command: ${cmd}`);
-					reject(response);
-					return;
-				}
-	
-				response = response.replace(/OK$/g, '').trim().split('\n');
-				response = response.filter(item => item !== 'OK');
-				log.easyDebug(`Successful response (${cmd}):`);
-				log.easyDebug(response);
-				resolve(response);
-			}, 500)
-		};
+			const onData = data => {
 
-		const onError = err => {
-			log.error(`Error Sending Command: ${cmd}`);
-			client.removeListener('data', onData);
-			client.removeListener('error', onError);
-			reject(err.message || err);
-		};
+				dataBuffer = Buffer.concat([dataBuffer, Buffer.from(data, 'utf-8')]);
 
-		client.on('data', onData);
-		client.on('error', onError);
+				clearTimeout(commandTimeout)
+				commandTimeout = setTimeout(() => {
+					cleanup();
 
-		if (!connected || (!client.connecting && !client.writable)) {
-			client.connect(port, ip);
-			client.on('connect', () => {
-				connected = true
+					let response = dataBuffer.toString();
+					response = response.replace(/[>\r]/g, '').trim();
+
+					if (response.slice(-2) !== 'OK') {
+						log.error(`Error Sending Command: ${cmd}`);
+						reject(response);
+						return;
+					}
+
+					response = response.replace(/OK$/g, '').trim().split('\n');
+					response = response.filter(item => item !== 'OK');
+					log.easyDebug(`Successful response (${cmd}):`);
+					log.easyDebug(response);
+					resolve(response);
+				}, 500)
+			};
+
+			const onError = err => {
+				log.error(`Error Sending Command: ${cmd}`);
+				cleanup();
+				reject(err.message || err);
+			};
+
+			client.on('data', onData);
+			client.on('error', onError);
+
+			if (!connected || (!client.connecting && !client.writable)) {
+				client.connect(port, ip);
+				client.on('connect', () => {
+					connected = true
+					client.write(`${cmd}\r\n`);
+				})
+			} else {
 				client.write(`${cmd}\r\n`);
-			})
-		} else {
-			client.write(`${cmd}\r\n`);
-		}
-
-		myq.end(me)
-	});
+			}
+		});
+	} finally {
+		// Release the queue slot ONLY after the response (or error) has landed.
+		// The previous version called myq.end synchronously after client.write,
+		// which let the next command start while the previous response was still
+		// being read on the same TCP socket. Multiple concurrent sendCommand
+		// calls would stack listeners and clobber each other (root cause of
+		// #16 scene-with-multiple-ACs misses, and contributes to #18 / #19).
+		myq.end(me);
+	}
 };
 
 const parseState = data => {

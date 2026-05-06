@@ -109,12 +109,22 @@ module.exports = {
 		}
 	},
 
-	formattedState: (device, state) => {
-		return {
+	formattedState: (device, state, changedProps) => {
+		const result = {
 			onoff: state.active ? 'ON' : 'OFF',
 			mode: state.mode,
-			st: device.usesFahrenheit ? toFahrenheit(state.targetTemperature) : state.targetTemperature,
-			fspeed: state.fanSpeed ? HKToFanSpeed(state.fanSpeed, device.capabilities.ALL.fanSpeeds): 'AUTO'
+			st: device.usesFahrenheit ? toFahrenheit(state.targetTemperature) : state.targetTemperature
 		}
+		// Only include fspeed if the user actually changed fanSpeed (or no
+		// change set was provided, falling back to legacy "always send"
+		// behavior). Avoids resetting the fan to AUTO every time the user
+		// changes only the temperature. See #21.
+		const shouldSendFspeed = !changedProps || changedProps.has('fanSpeed')
+		if (shouldSendFspeed) {
+			result.fspeed = state.fanSpeed
+				? HKToFanSpeed(state.fanSpeed, device.capabilities.ALL.fanSpeeds)
+				: 'AUTO'
+		}
+		return result
 	}
 }

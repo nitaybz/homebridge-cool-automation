@@ -83,7 +83,8 @@ Otherwise, follow these instructions
         "highFspeed": true,
         "topFspeed": false,
         "autoFspeed": true,
-        "debug": false
+        "debug": false,
+        "celsiusHalfSteps": false
     }
 ]
 
@@ -113,6 +114,7 @@ Otherwise, follow these instructions
 | `topFspeed`             | TOP Fan Speed                                              | No       | false   | Boolean |
 | `autoFspeed`            | AUTO Fan Speed                                             | No       | true    | Boolean |
 | `debug`                 | Enable Debug Logging                                      | No       | false   | Boolean |
+| `celsiusHalfSteps` | Enable Celsius Half Degrees                             | No       | false   | Boolean |
 
 ### Hub-specific Settings
 
