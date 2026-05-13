@@ -1,6 +1,7 @@
 const API = require('./coolAutomation/api')
 const SyncHomeKitCache = require('./coolAutomation/syncHomeKitCache')
 const RefreshState = require('./coolAutomation/refreshState')
+const migrateLegacyPersist = require('./coolAutomation/persistMigration')
 const path = require('path')
 const storage = require('node-persist')
 const PLUGIN_NAME = 'homebridge-cool-automation'
@@ -90,6 +91,7 @@ class CoolAutomationPlatform {
 
 		// Initialize cached state
 		hubConfig.storage.init().then(async () => {
+			await migrateLegacyPersist(hubPersistPath, hubConfig.storage, this.log.easyDebug)
 			hubConfig.cachedState = await hubConfig.storage.getItem('cool-automation-state') || hubConfig.emptyState
 			if (!hubConfig.cachedState.devices)
 				hubConfig.cachedState = hubConfig.emptyState
